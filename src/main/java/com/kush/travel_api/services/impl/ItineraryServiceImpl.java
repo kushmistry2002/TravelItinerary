@@ -103,36 +103,55 @@ public class ItineraryServiceImpl {
 		
 		String sharedName = itineraryDto.getSharedName();
 		//itineraries = this.modelMapper.map(itineraryDto, Itinerary.class);
-		itineraries.setUser(user);
-		itineraries.setDestination(itineraryDto.getDestination());
-		itineraries.setStart_date(itineraryDto.getStart_date());
-		itineraries.setEnd_date(itineraryDto.getEnd_date());
-		itineraries.setActivities(itineraryDto.getActivities());
-		itineraries.setShared(itineraries.getShared());
-		itineraries.setSharedName(itineraryDto.getSharedName());
-				
-		UserInfo shareduser = userRepo.getByUserId(sharedName);
-		if(shareduser == null) {	
-			throw new UsernameNotFoundException("User", "User Name", sharedName);
-		}
-		Itinerary updatedItineraries = this.itineraryRepo.save(itineraries);
-		if(updatedItineraries.getSharedName().equals("Null")){
-			throw new AuthException("Shared Name is invalid or Null!...");
+		if(itineraries.getUser().getId().equals(user.getId())) {
+			itineraries.setUser(user);
+			itineraries.setDestination(itineraryDto.getDestination());
+			itineraries.setStart_date(itineraryDto.getStart_date());
+			itineraries.setEnd_date(itineraryDto.getEnd_date());
+			itineraries.setActivities(itineraryDto.getActivities());
+			itineraries.setShared(itineraries.getShared());
+			itineraries.setSharedName(itineraryDto.getSharedName());
+					
+			UserInfo shareduser = userRepo.getByUserId(sharedName);
+			if(shareduser == null) {	
+				throw new UsernameNotFoundException("User", "User Name", sharedName);
+			}
+			Itinerary updatedItineraries = this.itineraryRepo.save(itineraries);
+			if(updatedItineraries.getSharedName().equals("Null")){
+				throw new AuthException("Shared Name is invalid or Null!...");
+			}
+			else {
+				ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
+				shareItinerary.setName(updatedItineraries.getSharedName());
+				shareItinerary.setShareitinerary(itineraries);
+				this.shareItineraryRepo.save(shareItinerary);
+			}
+			return this.modelMapper.map(updatedItineraries, ItineraryDto.class);
 		}
 		else {
-			ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
-			shareItinerary.setName(updatedItineraries.getSharedName());
-			shareItinerary.setShareitinerary(itineraries);
-			this.shareItineraryRepo.save(shareItinerary);
+			throw new AuthException("You do not access to update itinerary please contact with Admin");
 		}
-		return this.modelMapper.map(updatedItineraries, ItineraryDto.class);
 	}
 
 	public void deleteItineraries(Integer itinerariesId) {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String username = ((UserDetails)principal). getUsername();
+		UserInfo userInfo = userRepo.getByUserId(username);
+		UserInfo user = this.userRepo.findById(userInfo.getId())
+				.orElseThrow(()->new ResourceNotFoundException("User", "User Id", userInfo.getId()));
+
 		Itinerary itinerary = this.itineraryRepo.findById(itinerariesId)
 				.orElseThrow(()->new ResourceNotFoundException("Itinerary", "Itinerary Id", itinerariesId));
-		this.itineraryRepo.delete(itinerary);
-
+		
+		if(user.getUserRole().equals("ADMIN"))
+		{
+			this.itineraryRepo.delete(itinerary);
+		}
+		else {
+			if(user.getId().equals(itinerary.getUser().getId())) {
+				this.itineraryRepo.delete(itinerary);
+			}
+		}
 	}
 
 	public ItineraryResponse getAllItineraries(Integer pageNumber,Integer pageSize,String sortBy,String sortDir) {
@@ -162,9 +181,25 @@ public class ItineraryServiceImpl {
 	}
 
 	public ItineraryDto getItinerariesById(Integer itinerariesId) {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String username = ((UserDetails)principal). getUsername();
+		UserInfo userInfo = userRepo.getByUserId(username);
+		UserInfo user = this.userRepo.findById(userInfo.getId())
+				.orElseThrow(()->new ResourceNotFoundException("User", "User Id", userInfo.getId()));
+		
 		Itinerary itinerary = this.itineraryRepo.findById(itinerariesId)
 				.orElseThrow(()->new ResourceNotFoundException("Itinerary", "Itinerary Id", itinerariesId));
-		return this.modelMapper.map(itinerary, ItineraryDto.class);
+		
+		if(user.getUserRole().equals("ADMIN"))
+		{
+			return this.modelMapper.map(itinerary, ItineraryDto.class);
+		}
+		else {
+			if(user.getId().equals(itinerary.getUser().getId())) {
+				return this.modelMapper.map(itinerary, ItineraryDto.class);
+			}
+		}
+		throw new AuthException("You do not access view of itineraries please contact to Admin");
 	}
 
 	public List<ItineraryDto> getItinerariesByUser() {

@@ -55,33 +55,71 @@ public class PlaceServiceImpl {
 	private ModelMapper modelMapper;
 	//create
 	public PlaceDto createPlace(PlaceDto placeDto,Integer itineraryId) {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String username = ((UserDetails)principal). getUsername();
+		UserInfo userInfo = userRepo.getByUserId(username);
+		UserInfo user = this.userRepo.findById(userInfo.getId())
+				.orElseThrow(()->new ResourceNotFoundException("User", "User Id", userInfo.getId()));
+		
 		Itinerary itineraries = this.itineraryRepo.findById(itineraryId)
 				.orElseThrow(()->new ResourceNotFoundException("Itineraries", "Itineraries Id", itineraryId));
 		
-		Place places = this.modelMapper.map(placeDto, Place.class);
-		places.setItinerary(itineraries);
-		
-		Place savedPlace = this.placeRepo.save(places); 
-		return this.modelMapper.map(savedPlace, PlaceDto.class);
+		if(itineraries.getUser().getId().equals(user.getId())) {
+			Place places = this.modelMapper.map(placeDto, Place.class);
+			places.setItinerary(itineraries);
+			
+			Place savedPlace = this.placeRepo.save(places); 
+			return this.modelMapper.map(savedPlace, PlaceDto.class);
+		}
+		else {
+			throw new AuthException("Please enter your Itineraries Id");
+		}
 	}
 	//update
 	public PlaceDto updatePlace(PlaceDto placeDto,Integer placeId) {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String username = ((UserDetails)principal). getUsername();
+		UserInfo userInfo = userRepo.getByUserId(username);
+		UserInfo user = this.userRepo.findById(userInfo.getId())
+				.orElseThrow(()->new ResourceNotFoundException("User", "User Id", userInfo.getId()));
+		
 		Place places = this.placeRepo.findById(placeId)
 				.orElseThrow(()->new ResourceNotFoundException("Place", "Place Id", placeId));
 		
 		Itinerary itinerary = places.getItinerary();
 		
-		places.setItinerary(itinerary);
-		places.setName(placeDto.getName());
-		places.setAddress(placeDto.getAddress());
-		Place savedPlace = this.placeRepo.save(places); 
-		return this.modelMapper.map(savedPlace, PlaceDto.class);
+		if(itinerary.getUser().getId().equals(user.getId())) {
+			places.setItinerary(itinerary);
+			places.setName(placeDto.getName());
+			places.setAddress(placeDto.getAddress());
+			Place savedPlace = this.placeRepo.save(places); 
+			return this.modelMapper.map(savedPlace, PlaceDto.class);
+		}
+		else {
+			throw new AuthException("Please enter your Place Id beacuse this "+placeId+" do not created by "+user.getUsername());
+		}
 	}
 	//delete
 	public void deletePlace(Integer placeId) {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String username = ((UserDetails)principal). getUsername();
+		UserInfo userInfo = userRepo.getByUserId(username);
+		UserInfo user = this.userRepo.findById(userInfo.getId())
+				.orElseThrow(()->new ResourceNotFoundException("User", "User Id", userInfo.getId()));
+		
 		Place places = this.placeRepo.findById(placeId)
 				.orElseThrow(()->new ResourceNotFoundException("Place", "Place Id", placeId));
-		this.placeRepo.delete(places);
+		Itinerary itinerary = places.getItinerary();
+		
+		if(user.getUserRole().equals("ADMIN"))
+		{
+			this.placeRepo.delete(places);
+		}
+		else {
+			if(user.getId().equals(itinerary.getUser().getId())) {
+				this.placeRepo.delete(places);
+			}
+		}
 	}
 	//get all
 	public PlaceResponse getAllPlace(Integer pageNumber,Integer pageSize,String sortBy,String sortDir) {
@@ -111,9 +149,26 @@ public class PlaceServiceImpl {
 	}
 	//get by Id
 	public PlaceDto getPlaceById(Integer placeId) {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String username = ((UserDetails)principal). getUsername();
+		UserInfo userInfo = userRepo.getByUserId(username);
+		UserInfo user = this.userRepo.findById(userInfo.getId())
+				.orElseThrow(()->new ResourceNotFoundException("User", "User Id", userInfo.getId()));
+		
 		Place places = this.placeRepo.findById(placeId)
 				.orElseThrow(()->new ResourceNotFoundException("Place", "Place Id", placeId));
-		return this.modelMapper.map(places, PlaceDto.class);
+		Itinerary itinerary = places.getItinerary();
+		
+		if(user.getUserRole().equals("ADMIN"))
+		{
+			return this.modelMapper.map(places, PlaceDto.class);
+		}
+		else {
+			if(user.getId().equals(itinerary.getUser().getId())) {
+				return this.modelMapper.map(places, PlaceDto.class);
+			}
+		}
+		throw new AuthException("You do not access view of Place please contact to Admin");
 	}
 	//get by ItineraryId
 	public List<PlaceDto> getPlaceByItineraries(Integer ItinerariesId) {
