@@ -59,8 +59,9 @@ public class ItineraryServiceImpl {
 		System.out.println(sharedName);
 				
 		if(shared.equals("0")) {
-			if(sharedName.equals("Null") || sharedName.equals("")) {
+			if(sharedName.equalsIgnoreCase("Null") || sharedName.equals("")) {
 				itineraries.setUser(user);
+				itineraries.setSharedName("Null");
 				savedItineraries = this.itineraryRepo.save(itineraries);
 			}
 			else {
@@ -72,12 +73,16 @@ public class ItineraryServiceImpl {
 			if(shareduser == null) {	
 				throw new UsernameNotFoundException("User", "User Name", sharedName);
 			}
-			itineraries.setUser(user);
-			savedItineraries = this.itineraryRepo.save(itineraries);
-			if(savedItineraries.getSharedName().equals("Null")){
+			//sharedName == Username login
+			if(shareduser.getUsername().equals(username)) {
+				throw new AuthException("You can't use your username: "+username+" as the shared Name: "+itineraryDto.getSharedName());
+			}
+			if(itineraryDto.getSharedName().equals("Null")){
 				throw new AuthException("Shared Name is invalid or Null!...");
 			}
 			else {
+				itineraries.setUser(user);
+				savedItineraries = this.itineraryRepo.save(itineraries);
 				ShareItinerary shareItinerary = new ShareItinerary();
 				shareItinerary.setName(savedItineraries.getSharedName());
 				shareItinerary.setShareitinerary(itineraries);
@@ -91,6 +96,7 @@ public class ItineraryServiceImpl {
 	}
 
 	public ItineraryDto updateItineraries(ItineraryDto itineraryDto,Integer itinerariesId) {
+		Itinerary updatedItineraries = null;
 		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 		String username = ((UserDetails)principal). getUsername();
 		UserInfo userInfo = userRepo.getByUserId(username);
@@ -102,34 +108,84 @@ public class ItineraryServiceImpl {
 				.orElseThrow(()->new ResourceNotFoundException("Itineraries", "Itineraries Id", itinerariesId));
 		
 		String sharedName = itineraryDto.getSharedName();
-		//itineraries = this.modelMapper.map(itineraryDto, Itinerary.class);
-		if(itineraries.getUser().getId().equals(user.getId())) {
-			itineraries.setUser(user);
+		
+		if(user.getUserRole().equals("ADMIN"))
+		{
+			itineraries.setUser(itineraries.getUser());
 			itineraries.setDestination(itineraryDto.getDestination());
 			itineraries.setStart_date(itineraryDto.getStart_date());
 			itineraries.setEnd_date(itineraryDto.getEnd_date());
 			itineraries.setActivities(itineraryDto.getActivities());
 			itineraries.setShared(itineraries.getShared());
-			itineraries.setSharedName(itineraryDto.getSharedName());
-					
-			UserInfo shareduser = userRepo.getByUserId(sharedName);
-			if(shareduser == null) {	
-				throw new UsernameNotFoundException("User", "User Name", sharedName);
-			}
-			Itinerary updatedItineraries = this.itineraryRepo.save(itineraries);
-			if(updatedItineraries.getSharedName().equals("Null")){
-				throw new AuthException("Shared Name is invalid or Null!...");
+			
+			if(itineraries.getShared().equals("0")) {
+				itineraries.setSharedName("Null");
+				updatedItineraries = this.itineraryRepo.save(itineraries);	
 			}
 			else {
-				ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
-				shareItinerary.setName(updatedItineraries.getSharedName());
-				shareItinerary.setShareitinerary(itineraries);
-				this.shareItineraryRepo.save(shareItinerary);
+				itineraries.setSharedName(itineraryDto.getSharedName());
+				UserInfo shareduser = userRepo.getByUserId(sharedName);
+				if(shareduser == null) {	
+					throw new UsernameNotFoundException("User", "User Name", sharedName);
+				}
+				//sharedName == Username login
+				if(shareduser.getUsername().equals(username)) {
+					throw new AuthException("You can't use your username: "+username+" as the shared Name: "+itineraryDto.getSharedName());
+				}
+				if(itineraryDto.getSharedName().equals("Null")){
+					throw new AuthException("Shared Name is invalid or Null!...");
+				}
+				else {
+					updatedItineraries = this.itineraryRepo.save(itineraries);
+					ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
+					shareItinerary.setName(updatedItineraries.getSharedName());
+					shareItinerary.setShareitinerary(itineraries);
+					this.shareItineraryRepo.save(shareItinerary);
+				}
 			}
 			return this.modelMapper.map(updatedItineraries, ItineraryDto.class);
 		}
 		else {
-			throw new AuthException("You do not access to update itinerary please contact with Admin");
+			if(user.getId().equals(itineraries.getUser().getId())) {
+				itineraries.setUser(user);
+				itineraries.setDestination(itineraryDto.getDestination());
+				itineraries.setStart_date(itineraryDto.getStart_date());
+				itineraries.setEnd_date(itineraryDto.getEnd_date());
+				itineraries.setActivities(itineraryDto.getActivities());
+				itineraries.setShared(itineraries.getShared());
+				
+				if(itineraries.getShared().equals("0")) {
+					itineraries.setSharedName("Null");
+					updatedItineraries = this.itineraryRepo.save(itineraries);	
+				}
+				else {
+					itineraries.setSharedName(itineraryDto.getSharedName());
+					UserInfo shareduser = userRepo.getByUserId(sharedName);
+					//shredName Check
+					if(shareduser == null) {	
+						throw new UsernameNotFoundException("User", "User Name", sharedName);
+					}
+					//sharedName == Username login
+					if(shareduser.getUsername().equals(username)) {
+						throw new AuthException("You can't use your username: "+username+" as the shared Name: "+itineraryDto.getSharedName());
+					}
+					//shredName == null check
+					if(itineraryDto.getSharedName().equals("Null")){
+						throw new AuthException("Shared Name is invalid or Null!...");
+					}
+					else {
+						updatedItineraries = this.itineraryRepo.save(itineraries);
+						ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
+						shareItinerary.setName(updatedItineraries.getSharedName());
+						shareItinerary.setShareitinerary(itineraries);
+						this.shareItineraryRepo.save(shareItinerary);
+					}
+				}
+				return this.modelMapper.map(updatedItineraries, ItineraryDto.class);
+			}
+			else {
+				throw new AuthException("You do not access to update itinerary please contact with Admin");
+			}
 		}
 	}
 

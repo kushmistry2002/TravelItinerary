@@ -87,8 +87,8 @@ public class PlaceServiceImpl {
 				.orElseThrow(()->new ResourceNotFoundException("Place", "Place Id", placeId));
 		
 		Itinerary itinerary = places.getItinerary();
-		
-		if(itinerary.getUser().getId().equals(user.getId())) {
+		if(user.getUserRole().equals("ADMIN"))
+		{
 			places.setItinerary(itinerary);
 			places.setName(placeDto.getName());
 			places.setAddress(placeDto.getAddress());
@@ -96,8 +96,17 @@ public class PlaceServiceImpl {
 			return this.modelMapper.map(savedPlace, PlaceDto.class);
 		}
 		else {
-			throw new AuthException("Please enter your Place Id beacuse this "+placeId+" do not created by "+user.getUsername());
-		}
+			if(user.getId().equals(itinerary.getUser().getId())) {
+				places.setItinerary(itinerary);
+				places.setName(placeDto.getName());
+				places.setAddress(placeDto.getAddress());
+				Place savedPlace = this.placeRepo.save(places); 
+				return this.modelMapper.map(savedPlace, PlaceDto.class);
+			}
+			else {
+				throw new AuthException("Please enter your Place Id beacuse this "+placeId+" do not created by "+user.getUsername());
+			}
+		}	
 	}
 	//delete
 	public void deletePlace(Integer placeId) {
@@ -228,7 +237,8 @@ public class PlaceServiceImpl {
 		itineraries.setSharedName(addPackDto.getSharedName());
 		
 		if(shared.equals("0")) {
-			if(sharedName.equals("Null") || sharedName.equals("")) {
+			if(sharedName.equalsIgnoreCase("Null") || sharedName.equals("")) {
+				itineraries.setSharedName("Null");
 				savedItineraries = this.itineraryRepo.save(itineraries);
 			}
 			else {
@@ -240,11 +250,15 @@ public class PlaceServiceImpl {
 			if(shareduser == null) {	
 				throw new UsernameNotFoundException("User", "User Name", sharedName);
 			}
-			savedItineraries = this.itineraryRepo.save(itineraries);
-			if(savedItineraries.getSharedName().equals("Null")){
+			//sharedName == Username login
+			if(shareduser.getUsername().equals(username)) {
+				throw new AuthException("You can't use your username: "+username+" as the shared Name: "+addPackDto.getSharedName());
+			}
+			if(addPackDto.getSharedName().equals("Null")){
 				throw new AuthException("Shared Name is invalid or Null!...");
 			}
 			else {
+				savedItineraries = this.itineraryRepo.save(itineraries);
 				ShareItinerary shareItinerary = new ShareItinerary();
 				shareItinerary.setName(savedItineraries.getSharedName());
 				shareItinerary.setShareitinerary(itineraries);

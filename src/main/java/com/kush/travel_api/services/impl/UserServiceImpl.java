@@ -93,19 +93,34 @@ public class UserServiceImpl implements UserDetailsService {
 	}
 
 	public UserDto updateUser(UserDto userDto) throws Exception {
+		UserInfo savedUser = null;
 		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 		String username = ((UserDetails)principal).getUsername();
 		UserInfo user = userRepo.getByUserId(username);
 		
 		String email = userDto.getEmail();
 		email = email.toLowerCase();
-		
-		user.setUsername(username);
-		user.setEmail(email);
-		user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-		user.setUserRole(user.getUserRole());
-		UserInfo updatedUser = this.userRepo.save(user);
-		return this.modelMapper.map(updatedUser, UserDto.class);
+		String userRole = userDto.getUserRole();
+        userRole = userRole.toUpperCase();
+        
+		if(user.getUserRole().equals("ADMIN")) {
+			user.setUsername(username);
+			user.setEmail(email);
+			user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+			if(userRole.equals("ADMIN") || userRole.equals("USER")) {
+				user.setUserRole(userDto.getUserRole());
+		        savedUser = this.userRepo.save(user);
+	        }
+			return this.modelMapper.map(savedUser, UserDto.class); 
+		}
+		else {
+			user.setUsername(username);
+			user.setEmail(email);
+			user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+			user.setUserRole(user.getUserRole());
+			UserInfo updatedUser = this.userRepo.save(user);
+			return this.modelMapper.map(updatedUser, UserDto.class);
+		}
 	}
 
 	public UserResponse getAllUsers(Integer pageNumber,Integer pageSize,String sortBy,String sortDir) {
