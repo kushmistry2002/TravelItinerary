@@ -211,6 +211,22 @@ public class PlaceServiceImpl {
 		return packResponse;
 	}
 	
+	//create Pack by admin
+	public PackDto createPack(PackDto packDto) {
+		Pack savedPack = null;
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String username = ((UserDetails)principal). getUsername();
+		UserInfo userInfo = userRepo.getByUserId(username);
+		UserInfo user = this.userRepo.findById(userInfo.getId())
+				.orElseThrow(()->new ResourceNotFoundException("User", "User Id", userInfo.getId()));
+		
+		if(user.getUserRole().equals("ADMIN")) {
+			Pack pack = this.modelMapper.map(packDto, Pack.class);
+			savedPack = this.packRepo.save(pack); 
+		}
+		return this.modelMapper.map(savedPack, PackDto.class);
+	}
+	
 	//add packages to itinerary
 	public ItineraryDto createPackUser(AddPackDto addPackDto,Integer packId) {
 		Itinerary savedItineraries = null;
@@ -234,7 +250,6 @@ public class PlaceServiceImpl {
 		itineraries.setEnd_date(addPackDto.getEnd_date());
 		itineraries.setStart_date(addPackDto.getStart_date());
 		itineraries.setShared(addPackDto.getShared());
-		itineraries.setSharedName(addPackDto.getSharedName());
 		
 		if(shared.equals("0")) {
 			if(sharedName.equalsIgnoreCase("Null") || sharedName.equals("")) {
@@ -246,6 +261,7 @@ public class PlaceServiceImpl {
 			}
 		}
 		else if (shared.equals("1")) {		
+			itineraries.setSharedName(sharedName);
 			UserInfo shareduser = userRepo.getByUserId(sharedName);
 			if(shareduser == null) {	
 				throw new UsernameNotFoundException("User", "User Name", sharedName);

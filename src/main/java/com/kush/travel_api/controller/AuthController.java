@@ -26,6 +26,7 @@ import com.kush.travel_api.payload.ApiResponse;
 import com.kush.travel_api.payload.AuthRequest;
 import com.kush.travel_api.payload.ItineraryDto;
 import com.kush.travel_api.payload.ItineraryResponse;
+import com.kush.travel_api.payload.PackDto;
 import com.kush.travel_api.payload.PackResponse;
 import com.kush.travel_api.payload.PlaceDto;
 import com.kush.travel_api.payload.PlaceResponse;
@@ -231,5 +232,13 @@ public class AuthController {
    	public ResponseEntity<ItineraryDto> createPackUser(@Valid @RequestBody AddPackDto addPackDto,@PathVariable Integer packId){
        	ItineraryDto itinerary = this.placeService.createPackUser(addPackDto,packId);
    		return new ResponseEntity<ItineraryDto>(itinerary,HttpStatus.CREATED);
+   	}
+    
+    //Post - Create Pack by admin 
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping("/createPackage")
+   	public ResponseEntity<PackDto> createPack(@Valid @RequestBody PackDto packDto){
+    	PackDto pack = this.placeService.createPack(packDto);
+   		return new ResponseEntity<PackDto>(pack,HttpStatus.CREATED);
    	}
 }

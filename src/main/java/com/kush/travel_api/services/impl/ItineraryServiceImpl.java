@@ -95,99 +95,258 @@ public class ItineraryServiceImpl {
 		return this.modelMapper.map(savedItineraries, ItineraryDto.class);
 	}
 
-	public ItineraryDto updateItineraries(ItineraryDto itineraryDto,Integer itinerariesId) {
-		Itinerary updatedItineraries = null;
-		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		String username = ((UserDetails)principal). getUsername();
-		UserInfo userInfo = userRepo.getByUserId(username);
+//	public ItineraryDto updateItineraries(ItineraryDto itineraryDto,Integer itinerariesId) {
+//		Itinerary updatedItineraries = null;
+//		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//		String username = ((UserDetails)principal). getUsername();
+//		UserInfo userInfo = userRepo.getByUserId(username);
+//		
+//		UserInfo user = this.userRepo.findById(userInfo.getId())
+//				.orElseThrow(()->new ResourceNotFoundException("User", "User Id", userInfo.getId()));
+//		
+//		Itinerary itineraries = this.itineraryRepo.findById(itinerariesId)
+//				.orElseThrow(()->new ResourceNotFoundException("Itineraries", "Itineraries Id", itinerariesId));
+//		
+//		String sharedName = itineraryDto.getSharedName();
+//		String prevShared = itineraries.getShared();
+//		
+//		if(user.getUserRole().equals("ADMIN"))
+//		{
+//			itineraries.setUser(itineraries.getUser());
+//			itineraries.setDestination(itineraryDto.getDestination());
+//			itineraries.setStart_date(itineraryDto.getStart_date());
+//			itineraries.setEnd_date(itineraryDto.getEnd_date());
+//			itineraries.setActivities(itineraryDto.getActivities());
+//			itineraries.setShared(itineraryDto.getShared());
+//			
+//			if(itineraryDto.getShared().equals("0")) {
+//				itineraries.setSharedName("Null");
+//				if(itineraryDto.getShared().equals(prevShared)) {
+//					
+//				}
+//				else {
+//					ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
+//					this.shareItineraryRepo.delete(shareItinerary);
+//				}
+//				updatedItineraries = this.itineraryRepo.save(itineraries);	
+//			}
+//			else {
+//				itineraries.setSharedName(sharedName);
+//				UserInfo shareduser = userRepo.getByUserId(sharedName);
+//				if(shareduser == null) {	
+//					throw new UsernameNotFoundException("User", "User Name", sharedName);
+//				}
+//				//sharedName == Username login
+//				if(shareduser.getUsername().equals(username)) {
+//					throw new AuthException("You can't use your username: "+username+" as the shared Name: "+itineraryDto.getSharedName());
+//				}
+//				if(itineraryDto.getSharedName().equals("Null")){
+//					throw new AuthException("Shared Name is invalid or Null!...");
+//				}
+//				else {
+//					if(itineraryDto.getShared().equals(prevShared)) {
+//						
+//					}
+//					else {						
+//						updatedItineraries = this.itineraryRepo.save(itineraries);
+//						ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
+//						shareItinerary.setName(updatedItineraries.getSharedName());
+//						shareItinerary.setShareitinerary(itineraries);
+//						this.shareItineraryRepo.save(shareItinerary);
+//					}
+//				}
+//			}
+//			return this.modelMapper.map(updatedItineraries, ItineraryDto.class);
+//		}
+//		else {
+//			if(user.getId().equals(itineraries.getUser().getId())) {
+//				itineraries.setUser(user);
+//				itineraries.setDestination(itineraryDto.getDestination());
+//				itineraries.setStart_date(itineraryDto.getStart_date());
+//				itineraries.setEnd_date(itineraryDto.getEnd_date());
+//				itineraries.setActivities(itineraryDto.getActivities());
+//				itineraries.setShared(itineraries.getShared());
+//				
+//				if(itineraries.getShared().equals("0")) {
+//					itineraries.setSharedName("Null");
+//					if(itineraryDto.getShared().equals(prevShared)) {
+//						
+//					}
+//					else {
+//						ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
+//						this.shareItineraryRepo.delete(shareItinerary);
+//					}
+//					updatedItineraries = this.itineraryRepo.save(itineraries);	
+//				}
+//				else {
+//					itineraries.setSharedName(itineraryDto.getSharedName());
+//					UserInfo shareduser = userRepo.getByUserId(sharedName);
+//					//shredName Check
+//					if(shareduser == null) {	
+//						throw new UsernameNotFoundException("User", "User Name", sharedName);
+//					}
+//					//sharedName == Username login
+//					if(shareduser.getUsername().equals(username)) {
+//						throw new AuthException("You can't use your username: "+username+" as the shared Name: "+itineraryDto.getSharedName());
+//					}
+//					//shredName == null check
+//					if(itineraryDto.getSharedName().equals("Null")){
+//						throw new AuthException("Shared Name is invalid or Null!...");
+//					}
+//					else {
+//						if(itineraryDto.getShared().equals(prevShared)) {
+//							
+//						}
+//						else {						
+//							updatedItineraries = this.itineraryRepo.save(itineraries);
+//							ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
+//							shareItinerary.setName(updatedItineraries.getSharedName());
+//							shareItinerary.setShareitinerary(itineraries);
+//							this.shareItineraryRepo.save(shareItinerary);
+//						}
+//					}
+//				}
+//				return this.modelMapper.map(updatedItineraries, ItineraryDto.class);
+//			}
+//			else {
+//				throw new AuthException("You do not access to update itinerary please contact with Admin");
+//			}
+//		}
+//	}
+	
+	public ItineraryDto updateItineraries(ItineraryDto itineraryDto, Integer itinerariesId) throws AuthException {
+		// TODO Auto-generated method stub
 		
-		UserInfo user = this.userRepo.findById(userInfo.getId())
-				.orElseThrow(()->new ResourceNotFoundException("User", "User Id", userInfo.getId()));
+		Itinerary updateItineraries=null;
+		//ShareItinerary shareItinerary=null;
+		Object principal=SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		String username=((UserDetails)principal).getUsername();
+		UserInfo userinfo=userRepo.getByUserId(username);
+		UserInfo user=this.userRepo.findById(userinfo.getId()).orElseThrow(()->new ResourceNotFoundException("User", "User Id", userinfo.getId()));
 		
-		Itinerary itineraries = this.itineraryRepo.findById(itinerariesId)
-				.orElseThrow(()->new ResourceNotFoundException("Itineraries", "Itineraries Id", itinerariesId));
+		Itinerary itineraries=this.itineraryRepo.findById(itinerariesId).orElseThrow(()->new ResourceNotFoundException("User", "User Id", userinfo.getId()));
 		
-		String sharedName = itineraryDto.getSharedName();
+	
+	String sharename=itineraryDto.getSharedName();
+	
+	if(user.getUserRole().equals("ADMIN"))
+	{
+		itineraries.setUser(itineraries.getUser());
+		itineraries.setDestination(itineraryDto.getDestination());
+		itineraries.setActivities(itineraryDto.getActivities());
+		itineraries.setStart_date(itineraryDto.getStart_date());
+		itineraries.setEnd_date(itineraryDto.getEnd_date());
+		itineraries.setShared(itineraryDto.getShared());
 		
-		if(user.getUserRole().equals("ADMIN"))
+		if(itineraries.getShared().equals("0"))
 		{
-			itineraries.setUser(itineraries.getUser());
-			itineraries.setDestination(itineraryDto.getDestination());
-			itineraries.setStart_date(itineraryDto.getStart_date());
-			itineraries.setEnd_date(itineraryDto.getEnd_date());
-			itineraries.setActivities(itineraryDto.getActivities());
-			itineraries.setShared(itineraries.getShared());
+			itineraries.setSharedName("null");
+			updateItineraries=this.itineraryRepo.save(itineraries);
+			ShareItinerary shareItinerary=this.shareItineraryRepo.findByitineraryid(itinerariesId);
+			this.shareItineraryRepo.delete(shareItinerary);
 			
-			if(itineraries.getShared().equals("0")) {
-				itineraries.setSharedName("Null");
-				updatedItineraries = this.itineraryRepo.save(itineraries);	
+			
+		}
+		else
+		{
+			
+			
+			if(itineraryDto.getSharedName().equals("null"))
+			{
+				throw new AuthException("Shared name is invalid..");
 			}
-			else {
-				itineraries.setSharedName(itineraryDto.getSharedName());
-				UserInfo shareduser = userRepo.getByUserId(sharedName);
-				if(shareduser == null) {	
-					throw new UsernameNotFoundException("User", "User Name", sharedName);
-				}
-				//sharedName == Username login
-				if(shareduser.getUsername().equals(username)) {
-					throw new AuthException("You can't use your username: "+username+" as the shared Name: "+itineraryDto.getSharedName());
-				}
-				if(itineraryDto.getSharedName().equals("Null")){
-					throw new AuthException("Shared Name is invalid or Null!...");
-				}
-				else {
-					updatedItineraries = this.itineraryRepo.save(itineraries);
-					ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
-					shareItinerary.setName(updatedItineraries.getSharedName());
+			else
+			{
+				
+				if(itineraries.getSharedName().equals("null"))
+				{
+					itineraries.setSharedName(itineraryDto.getSharedName());
+					UserInfo shareUser=userRepo.getByUserId(sharename);
+					updateItineraries=this.itineraryRepo.save(itineraries);
+					ShareItinerary shareItinerary=new ShareItinerary();
+					shareItinerary.setName(updateItineraries.getSharedName());
 					shareItinerary.setShareitinerary(itineraries);
 					this.shareItineraryRepo.save(shareItinerary);
 				}
-			}
-			return this.modelMapper.map(updatedItineraries, ItineraryDto.class);
-		}
-		else {
-			if(user.getId().equals(itineraries.getUser().getId())) {
-				itineraries.setUser(user);
-				itineraries.setDestination(itineraryDto.getDestination());
-				itineraries.setStart_date(itineraryDto.getStart_date());
-				itineraries.setEnd_date(itineraryDto.getEnd_date());
-				itineraries.setActivities(itineraryDto.getActivities());
-				itineraries.setShared(itineraries.getShared());
-				
-				if(itineraries.getShared().equals("0")) {
-					itineraries.setSharedName("Null");
-					updatedItineraries = this.itineraryRepo.save(itineraries);	
-				}
-				else {
+				else
+				{
 					itineraries.setSharedName(itineraryDto.getSharedName());
-					UserInfo shareduser = userRepo.getByUserId(sharedName);
-					//shredName Check
-					if(shareduser == null) {	
-						throw new UsernameNotFoundException("User", "User Name", sharedName);
-					}
-					//sharedName == Username login
-					if(shareduser.getUsername().equals(username)) {
-						throw new AuthException("You can't use your username: "+username+" as the shared Name: "+itineraryDto.getSharedName());
-					}
-					//shredName == null check
-					if(itineraryDto.getSharedName().equals("Null")){
-						throw new AuthException("Shared Name is invalid or Null!...");
-					}
-					else {
-						updatedItineraries = this.itineraryRepo.save(itineraries);
-						ShareItinerary shareItinerary = this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());
-						shareItinerary.setName(updatedItineraries.getSharedName());
+					UserInfo shareUser=userRepo.getByUserId(sharename);
+					updateItineraries=this.itineraryRepo.save(itineraries);
+					ShareItinerary shareItinerary=this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());					
+					shareItinerary.setName(itineraries.getSharedName());
+					shareItinerary.setShareitinerary(itineraries);
+					this.shareItineraryRepo.save(shareItinerary);
+				}		
+			}
+					
+		}
+		return this.modelMapper.map(updateItineraries, ItineraryDto.class);
+	}
+	else
+	{	
+		if(user.getId()==itineraries.getUser().getId())
+		{
+			itineraries.setUser(user);
+			itineraries.setDestination(itineraryDto.getDestination());
+			itineraries.setActivities(itineraryDto.getActivities());
+			itineraries.setStart_date(itineraryDto.getStart_date());
+			itineraries.setEnd_date(itineraryDto.getEnd_date());
+			itineraries.setShared(itineraryDto.getShared());
+			
+			if(itineraries.getShared().equals("0"))
+			{
+				itineraries.setSharedName("null");
+				updateItineraries=this.itineraryRepo.save(itineraries);
+				ShareItinerary shareItinerary=this.shareItineraryRepo.findByitineraryid(itinerariesId);
+				this.shareItineraryRepo.delete(shareItinerary);
+				
+			}
+			else
+			{
+				if(itineraryDto.getSharedName().equals("null"))
+				{
+					
+					throw new AuthException("Shared name is not valid or null");
+				}
+				else
+				{
+					
+					if(itineraries.getSharedName().equals("null"))
+					{
+						itineraries.setSharedName(itineraryDto.getSharedName());
+						UserInfo shareUser=userRepo.getByUserId(sharename);
+						updateItineraries=this.itineraryRepo.save(itineraries);
+						ShareItinerary shareItinerary=new ShareItinerary();
+						shareItinerary.setName(updateItineraries.getSharedName());
 						shareItinerary.setShareitinerary(itineraries);
 						this.shareItineraryRepo.save(shareItinerary);
 					}
+					else
+					{
+						itineraries.setSharedName(itineraryDto.getSharedName());
+						UserInfo shareUser=userRepo.getByUserId(sharename);
+						updateItineraries=this.itineraryRepo.save(itineraries);
+						ShareItinerary shareItinerary=this.shareItineraryRepo.findByitineraryid(itineraries.getItineraryid());					
+						shareItinerary.setName(itineraries.getSharedName());
+						shareItinerary.setShareitinerary(itineraries);
+						this.shareItineraryRepo.save(shareItinerary);
+						
+					}
 				}
-				return this.modelMapper.map(updatedItineraries, ItineraryDto.class);
+				
 			}
-			else {
-				throw new AuthException("You do not access to update itinerary please contact with Admin");
-			}
+			
+			return this.modelMapper.map(updateItineraries, ItineraryDto.class);
 		}
-	}
+		else
+		{
+			throw new AuthException("You do not access to update itinerary please contact with Admin");
+		}
+			
+	}	
+			
+}
 
 	public void deleteItineraries(Integer itinerariesId) {
 		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
